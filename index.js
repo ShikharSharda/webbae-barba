@@ -1,11 +1,13 @@
-import { gsap, random } from 'gsap';
+import { gsap } from 'gsap';
 
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+import { Flip } from 'gsap/Flip';
 
 /* The following plugin is a Club GSAP perk */
 import { SplitText } from 'gsap/SplitText';
 
-gsap.registerPlugin(ScrollTrigger, SplitText);
+gsap.registerPlugin(ScrollTrigger, SplitText, Flip);
 
 import barba from '@barba/core';
 
@@ -36,6 +38,19 @@ function init() {
             duration: 0.0001,
             stagger: { amount: 0.5, from: 'random' },
           });
+        },
+      },
+      {
+        name: 'flip',
+        sync: true,
+        from: {
+          namespace: ['posts'],
+        },
+        to: {
+          namespace: ['posts-cms'],
+        },
+        enter(data) {
+          handlePostsToPostTemplateTransition(data);
         },
       },
     ],
@@ -80,6 +95,8 @@ function init() {
 
     const path = window.location.pathname;
     const activeLink = document.querySelector(`a[href="${path}"]`);
+
+    if (!activeLink) return;
     activeLink.classList.add('active');
   }
 
@@ -88,7 +105,6 @@ function init() {
       console.error('No page ID found.');
       return;
     }
-    console.log(pageID);
     document.querySelector('html').setAttribute('data-wf-page', pageID);
 
     // Reinitialize webflow modules
@@ -114,6 +130,33 @@ function init() {
       },
     });
   }
+}
+
+function handlePostsToPostTemplateTransition(data) {
+  const currentImage = data.event.target
+    .closest('.posts_link')
+    .querySelector('.posts_image');
+  const nextImage = document.querySelector('.post_image');
+  const currentContainer = data.current.container;
+  const nextImageContainer = document.querySelector('.post_image-wrap');
+
+  gsap.set(nextImage, { opacity: 0 });
+
+  const state = Flip.getState(currentImage);
+
+  nextImageContainer.appendChild(currentImage);
+
+  currentContainer.remove();
+
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  });
+
+  return Flip.from(state, {
+    duration: 0.5,
+    absolute: true,
+  });
 }
 
 window.addEventListener('DOMContentLoaded', init);
